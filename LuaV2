@@ -1,4 +1,3 @@
-
 local vu1 = loadstring(game:HttpGet([[https://github.com/Footagesus/WindUI/releases/latest/download/main.lua]]))()
 
 task.spawn(function()
@@ -67,9 +66,7 @@ vu1.Popup(v17, {
         {
             Title = 'Continue',
             Callback = function()
-    vu16 = true
-    print("CONTINUE CLICKED") -- debug
-end,
+                vu16 = true
             end,
             Variant = 'Primary',
         },
