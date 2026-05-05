@@ -76,9 +76,11 @@ vu1.Popup(v17, {
 
 local vu18 = vu1
 
-repeat
-    task.wait()
-until vu16
+local vu18 = vu1
+
+-- DO NOT put anything here
+
+local vu19 = vu18:CreateWindow({
 
 local vu19 = vu18:CreateWindow({
     Title = v15('VexloHub', vu7.Primary, vu7.Secondary),
