@@ -2661,46 +2661,76 @@ v420:Section({
     TextSize = 18,
     FontWeight = Enum.FontWeight.SemiBold,
 })
+
+-- ==================== KILL ALL + RANGE SLIDER ====================
+local killAllEnabled = false
+local killAllConnection = nil
+local killAuraRange = 25
+
 v420:Toggle({
-    Flag = 'KillAll',
-    Title = 'Kill All Players',
-    Desc = 'Automatically attack nearby targets',
+    Title = 'Kill All Players (Aura)',
+    Desc = 'Automatically kill players in range',
     Default = false,
-    Callback = function(p421)
-        if p421 then
-            vu327()
-            vu18:Notify({
-                Title = 'Kill All',
-                Content = 'Attack sequence started!',
-                Icon = 'skull',
-                Duration = 2,
-            })
+    Callback = function(state)
+        killAllEnabled = state
+        if state then
+            if killAllConnection then killAllConnection:Disconnect() end
+            killAllConnection = v3.Heartbeat:Connect(function()
+                if not killAllEnabled then return end
+                
+                -- Auto equip knife
+                local char = vu5.Character
+                if char then
+                    local knife = char:FindFirstChild('Knife') or vu5.Backpack:FindFirstChild('Knife')
+                    if knife and knife.Parent \~= char then
+                        knife.Parent = char
+                    end
+                end
+
+                local myRoot = vu5.Character and vu5.Character:FindFirstChild('HumanoidRootPart')
+                if not myRoot then return end
+
+                for _, plr in ipairs(vu2:GetPlayers()) do
+                    if plr \~= vu5 and plr.Character then
+                        local hum = plr.Character:FindFirstChild('Humanoid')
+                        local root = plr.Character:FindFirstChild('HumanoidRootPart')
+                        if hum and hum.Health > 0 and root then
+                            local distance = (myRoot.Position - root.Position).Magnitude
+                            if distance <= killAuraRange then
+                                myRoot.CFrame = CFrame.new(root.Position + (myRoot.Position - root.Position).Unit * 3, root.Position)
+                                
+                                local knife = vu5.Character:FindFirstChild('Knife')
+                                if knife and knife:FindFirstChild('Stab') then
+                                    for _ = 1, 3 do
+                                        knife.Stab:FireServer('Down')
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+            vu18:Notify({Title = 'Kill Aura', Content = 'Enabled | Range: ' .. killAuraRange, Icon = 'skull', Duration = 4})
         else
-            vu328()
-            vu18:Notify({
-                Title = 'Kill All',
-                Content = 'Attack stopped',
-                Icon = 'x-circle',
-                Duration = 2,
-            })
+            if killAllConnection then 
+                killAllConnection:Disconnect() 
+                killAllConnection = nil 
+            end
+            vu18:Notify({Title = 'Kill Aura', Content = 'Disabled', Icon = 'x-circle', Duration = 3})
         end
     end,
 })
-v420:Space()
+
 v420:Slider({
-    Flag = 'AttackDelay',
-    Title = 'Attack Delay',
-    Desc = 'Time between attacks',
-    Step = 0.1,
-    Value = {
-        Min = 0.1,
-        Max = 2,
-        Default = 0.5,
-    },
-    Callback = function(p422)
-        vu298 = p422
+    Title = 'Kill Aura Range',
+    Desc = 'How far Kill All reaches',
+    Step = 1,
+    Value = {Min = 10, Max = 50, Default = 25},
+    Callback = function(val)
+        killAuraRange = val
     end,
 })
+
 v420:Space()
 v420:Button({
     Title = 'Equip Knife',
@@ -2709,19 +2739,9 @@ v420:Button({
     Justify = 'Center',
     Callback = function()
         if vu305() then
-            vu18:Notify({
-                Title = 'Knife Equipped',
-                Content = 'Knife is ready!',
-                Icon = 'check-circle',
-                Duration = 2,
-            })
+            vu18:Notify({Title = 'Knife', Content = 'Equipped successfully!', Icon = 'check-circle', Duration = 2})
         else
-            vu18:Notify({
-                Title = 'Error',
-                Content = 'No knife found!',
-                Icon = 'x-circle',
-                Duration = 2,
-            })
+            vu18:Notify({Title = 'Error', Content = 'No knife found!', Icon = 'x-circle', Duration = 2})
         end
     end,
 })
@@ -2795,10 +2815,110 @@ v424:Toggle({
                 v429.Active = true
                 v429.TextWrapped = true
 
+local vu423 = nil
+local v424 = v330:Tab({
+    Title = v15('Sherrif', vu7.Sherrif, vu7.Sherrif),
+    Icon = 'shield',
+})
+
+v424:Section({
+    Title = 'Shooting Functions',
+    TextSize = 18,
+    FontWeight = Enum.FontWeight.SemiBold,
+})
+
+-- ==================== AIMLOCK ONLY ====================
+local aimlockEnabled = false
+local aimlockConnection = nil
+
+v424:Toggle({
+    Title = 'Aimlock (Camera)',
+    Desc = 'Smooth camera lock onto murderer',
+    Default = false,
+    Callback = function(state)
+        aimlockEnabled = state
+        if state then
+            if aimlockConnection then aimlockConnection:Disconnect() end
+            aimlockConnection = v3.RenderStepped:Connect(function()
+                local murderer = nil
+                for _, plr in ipairs(vu2:GetPlayers()) do
+                    if plr \~= vu5 and plr.Character then
+                        if plr.Character:FindFirstChild('Knife') or (plr:FindFirstChild('Backpack') and plr.Backpack:FindFirstChild('Knife')) then
+                            murderer = plr
+                            break
+                        end
+                    end
+                end
+                if murderer and murderer.Character and murderer.Character:FindFirstChild('HumanoidRootPart') then
+                    local target = murderer.Character.HumanoidRootPart
+                    local vel = target.AssemblyLinearVelocity
+                    local predicted = target.Position + vel * 0.085
+                    _.CFrame = CFrame.lookAt(_.CFrame.Position, predicted)
+                end
+            end)
+            vu18:Notify({Title = 'Aimlock', Content = 'Enabled - Locked onto murderer', Icon = 'crosshair', Duration = 3})
+        else
+            if aimlockConnection then 
+                aimlockConnection:Disconnect() 
+                aimlockConnection = nil 
+            end
+            vu18:Notify({Title = 'Aimlock', Content = 'Disabled', Icon = 'x-circle', Duration = 2})
+        end
+    end,
+})
+
+v424:Space()
+
+-- Your original Shot Type
+v424:Dropdown({
+    Flag = 'ShotType',
+    Title = 'Shot Type',
+    Desc = 'Choose shooting method',
+    Values = {
+        {Title = 'Default', Icon = 'target'},
+        {Title = 'Teleport', Icon = 'zap'},
+    },
+    Value = 'Default',
+    Callback = function(p425)
+        vu329 = p425.Title
+        vu18:Notify({Title = 'Shot Type', Content = 'Set to: ' .. p425.Title, Icon = 'check-circle', Duration = 2})
+    end,
+})
+
+v424:Space()
+
+-- Your original Shoot Murderer button (unchanged)
+v424:Toggle({
+    Title = 'Shoot Murderer',
+    Icon = 'crosshair',
+    Color = vu7.Toxic,
+    Justify = 'Center',
+    Callback = function(p426)
+        local v427 = game:GetService('CoreGui')
+        if p426 then
+            if not v427:FindFirstChild('GunW') then
+                local v428 = Instance.new('ScreenGui', v427)
+                v428.Name = 'GunW'
+
+                local v429 = Instance.new('TextButton', v428)
+                v429.Draggable = true
+                v429.Size = UDim2.new(0, 200, 0, 100)
+                v429.Position = UDim2.new(0.5, -100, 0.5, 0)
+                v429.TextStrokeTransparency = 0
+                v429.BackgroundTransparency = 0.2
+                v429.BackgroundColor3 = Color3.fromRGB(44, 44, 45)
+                v429.BorderColor3 = Color3.new(1, 1, 1)
+                v429.Text = 'Shoot Murder'
+                v429.TextColor3 = Color3.new(1, 1, 1)
+                v429.TextSize = 20
+                v429.Visible = true
+                v429.AnchorPoint = Vector2.new(0.5, 0.5)
+                v429.Active = true
+                v429.TextWrapped = true
+
                 Instance.new('UICorner', v429)
 
                 local v430 = Instance.new('UIStroke', v429)
-
                 v430.Color = Color3.new(0, 0, 0)
                 v430.Thickness = 4
                 v430.Transparency = 0.4
