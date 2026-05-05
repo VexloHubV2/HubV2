@@ -78,9 +78,9 @@ end,
 
 local vu18 = vu1
 
-local vu18 = vu1
-
--- DO NOT put anything here
+repeat
+    task.wait()
+until vu16
 
 local vu19 = vu18:CreateWindow({
 
@@ -88,19 +88,14 @@ local vu19 = vu18:CreateWindow({
     Title = v15('VexloHub', vu7.Primary, vu7.Secondary),
     Author = 'VexloHub Scripts • Blue Edition',
     Folder = 'VexloHub',
-
     Icon = 'zap',
     Size = UDim2.new(0, 600, 0, 500),
-
     Transparent = true,
     BackgroundTransparency = 0.15,
-
     Theme = 'Custom',
     SideBarWidth = 230,
-
     HideSearchBar = false,
     ScrollBarEnabled = true,
-
     OpenButton = {
         Title = 'Open VexloHub',
         CornerRadius = UDim.new(0.5, 0),
